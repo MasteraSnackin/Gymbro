@@ -1,0 +1,557 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Gym Bro architecture: upload analysis and cached demo",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/MasteraSnackin/Gymbro",
+      "revision": "90fc50bd7a1620e48b9f94530bb4f123495cf5e0"
+    },
+    "views": [
+      {
+        "id": "live-upload",
+        "label": "Live upload",
+        "focus": [
+          "video",
+          "scan",
+          "pose",
+          "coach-correct",
+          "remeasure",
+          "results"
+        ],
+        "note": "Browser sampling, configured scan providers, local measurements, server calls, then image remeasurement."
+      },
+      {
+        "id": "provider-fallbacks",
+        "label": "Scan provider order",
+        "focus": [
+          "scan",
+          "cosmos",
+          "nemotron",
+          "gpt-vision"
+        ],
+        "note": "The scan route tries configured providers in order. It stops at the first result containing events."
+      },
+      {
+        "id": "cached-demo",
+        "label": "Cached demo",
+        "focus": [
+          "fixtures",
+          "results"
+        ],
+        "note": "Loads bundled synthetic reports and real clip assets. This path does not call live analysis providers."
+      }
+    ]
+  },
+  "layout": {
+    "mode": "grid",
+    "origin": [
+      40,
+      60
+    ],
+    "cols": 5,
+    "gapX": 65,
+    "gapY": 85,
+    "cellW": 200,
+    "cellH": 80
+  },
+  "components": [
+    {
+      "id": "cosmos",
+      "type": "external",
+      "label": "Cosmos",
+      "sublabel": "Configured endpoint",
+      "row": 0,
+      "col": 0,
+      "size": [
+        200,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/lib/providers/cosmos.ts",
+          "label": "Cosmos adapter"
+        }
+      ]
+    },
+    {
+      "id": "nemotron",
+      "type": "external",
+      "label": "Nemotron",
+      "sublabel": "NVIDIA API",
+      "row": 0,
+      "col": 1,
+      "size": [
+        200,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/lib/providers/nemotron.ts",
+          "label": "Nemotron adapter"
+        }
+      ]
+    },
+    {
+      "id": "gpt-vision",
+      "type": "external",
+      "label": "GPT vision",
+      "sublabel": "OpenAI fallback",
+      "row": 0,
+      "col": 2,
+      "size": [
+        200,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/lib/providers/gptVisionPick.ts",
+          "label": "Vision picker"
+        }
+      ]
+    },
+    {
+      "id": "openai",
+      "type": "external",
+      "label": "OpenAI",
+      "sublabel": "Coach + image editing",
+      "row": 0,
+      "col": 3,
+      "size": [
+        200,
+        80
+      ],
+      "sources": [
+        {
+          "path": "src/lib/providers/openaiCoach.ts",
+          "line": 22,
+          "end_line": 47,
+          "label": "Coach request"
+        },
+        {
+          "path": "src/lib/providers/openaiImage.ts",
+          "line": 30,
+          "end_line": 65,
+          "label": "Image edit request"
+        }
+      ]
+    },
+    {
+      "id": "scan",
+      "type": "backend",
+      "label": "Scan route",
+      "sublabel": "POST /api/scan",
+      "tag": "Ordered fallback",
+      "row": 1,
+      "col": 1,
+      "size": [
+        200,
+        90
+      ],
+      "sources": [
+        {
+          "path": "src/app/api/scan/route.ts",
+          "line": 14,
+          "end_line": 36,
+          "label": "Scan endpoint"
+        },
+        {
+          "path": "src/lib/providers/scanChain.ts",
+          "line": 18,
+          "end_line": 48,
+          "label": "Provider order"
+        },
+        {
+          "path": "src/lib/providers/scanChain.ts",
+          "line": 59,
+          "end_line": 115,
+          "label": "Fallback conditions"
+        }
+      ]
+    },
+    {
+      "id": "coach-correct",
+      "type": "backend",
+      "label": "Coach + correct routes",
+      "sublabel": "/api/coach \u00b7 /api/correct",
+      "tag": "Parallel requests",
+      "row": 1,
+      "col": 3,
+      "size": [
+        210,
+        90
+      ],
+      "sources": [
+        {
+          "path": "src/app/api/coach/route.ts",
+          "line": 37,
+          "end_line": 69,
+          "label": "SSE coach endpoint"
+        },
+        {
+          "path": "src/app/api/correct/route.ts",
+          "line": 12,
+          "end_line": 32,
+          "label": "Image edit endpoint"
+        },
+        {
+          "path": "src/hooks/usePipeline.ts",
+          "line": 337,
+          "end_line": 425,
+          "label": "Parallel client requests"
+        }
+      ]
+    },
+    {
+      "id": "fixtures",
+      "type": "backend",
+      "label": "Bundled demo fixtures",
+      "sublabel": "public/demo/pullup",
+      "tag": "Cached / synthetic",
+      "row": 1,
+      "col": 4,
+      "size": [
+        210,
+        90
+      ],
+      "sources": [
+        {
+          "path": "public/demo/pullup/meta.json",
+          "line": 1,
+          "end_line": 8,
+          "label": "Synthetic demo provenance"
+        },
+        {
+          "path": "src/hooks/usePipeline.ts",
+          "line": 492,
+          "end_line": 586,
+          "label": "Cached demo loader"
+        },
+        {
+          "path": "src/lib/demo/serverFixtures.ts",
+          "label": "MOCK server fixtures"
+        }
+      ]
+    },
+    {
+      "id": "video",
+      "type": "frontend",
+      "label": "Local video sampling",
+      "sublabel": "Probe \u00b7 JPEGs \u00b7 contact sheet",
+      "row": 2,
+      "col": 0,
+      "size": [
+        210,
+        90
+      ],
+      "sources": [
+        {
+          "path": "src/hooks/usePipeline.ts",
+          "line": 143,
+          "end_line": 185,
+          "label": "Local video and scan request"
+        },
+        {
+          "path": "src/lib/video/extractFrames.ts",
+          "label": "Browser frame extraction"
+        }
+      ]
+    },
+    {
+      "id": "pose",
+      "type": "frontend",
+      "label": "MediaPipe + rules",
+      "sublabel": "Refine \u00b7 crop \u00b7 angles \u00b7 3D",
+      "tag": "Browser",
+      "row": 2,
+      "col": 1,
+      "size": [
+        210,
+        90
+      ],
+      "sources": [
+        {
+          "path": "src/hooks/usePipeline.ts",
+          "line": 187,
+          "end_line": 245,
+          "label": "Pose-only scan fallback"
+        },
+        {
+          "path": "src/hooks/usePipeline.ts",
+          "line": 248,
+          "end_line": 302,
+          "label": "Pose, crop and rep capture"
+        },
+        {
+          "path": "src/lib/exercises/rules.ts",
+          "label": "Exercise measurement rules"
+        }
+      ]
+    },
+    {
+      "id": "remeasure",
+      "type": "frontend",
+      "label": "Image remeasurement",
+      "sublabel": "MediaPipe \u00b7 one primary metric",
+      "tag": "Browser",
+      "row": 2,
+      "col": 3,
+      "size": [
+        210,
+        90
+      ],
+      "sources": [
+        {
+          "path": "src/hooks/usePipeline.ts",
+          "line": 428,
+          "end_line": 454,
+          "label": "Remeasure and retry"
+        },
+        {
+          "path": "src/lib/exercises/verify.ts",
+          "line": 35,
+          "end_line": 61,
+          "label": "Primary-metric pass rule"
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "type": "frontend",
+      "label": "Session results",
+      "sublabel": "Zustand \u00b7 browser memory",
+      "tag": "No database",
+      "row": 2,
+      "col": 4,
+      "size": [
+        210,
+        90
+      ],
+      "sources": [
+        {
+          "path": "src/lib/store/pipeline.ts",
+          "line": 38,
+          "end_line": 70,
+          "label": "Result state"
+        },
+        {
+          "path": "src/lib/store/pipeline.ts",
+          "line": 107,
+          "end_line": 120,
+          "label": "In-memory store"
+        },
+        {
+          "path": "src/components/analyze/AnalyzeView.tsx",
+          "label": "Result presentation"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Browser: video and session state",
+      "wraps": [
+        "video",
+        "pose",
+        "remeasure",
+        "results"
+      ],
+      "pad": 30
+    },
+    {
+      "kind": "region",
+      "label": "Next.js API routes",
+      "wraps": [
+        "scan",
+        "coach-correct"
+      ],
+      "pad": 25
+    }
+  ],
+  "connections": [
+    {
+      "id": "jpeg-scan",
+      "from": "video",
+      "to": "scan",
+      "label": "JPEG frames + contact sheet",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "local-video-pose",
+      "from": "video",
+      "to": "pose",
+      "label": "Local frames",
+      "variant": "emphasis",
+      "labelAt": [
+        278,
+        494
+      ]
+    },
+    {
+      "id": "scan-cosmos",
+      "from": "scan",
+      "to": "cosmos",
+      "label": "1 \u00b7 if configured"
+    },
+    {
+      "id": "scan-nemotron",
+      "from": "scan",
+      "to": "nemotron",
+      "label": "2 \u00b7 fallback",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [
+        386.84,
+        185
+      ]
+    },
+    {
+      "id": "scan-gpt",
+      "from": "scan",
+      "to": "gpt-vision",
+      "label": "3 \u00b7 fallback"
+    },
+    {
+      "id": "events-local",
+      "from": "scan",
+      "to": "pose",
+      "label": "Events + timestamps",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "pose-requests",
+      "from": "pose",
+      "to": "coach-correct",
+      "label": "JPEG + keypoints + angles",
+      "variant": "emphasis"
+    },
+    {
+      "id": "openai-calls",
+      "from": "coach-correct",
+      "to": "openai",
+      "label": "Report / image edit",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "after-remeasure",
+      "from": "coach-correct",
+      "to": "remeasure",
+      "label": "Edited image",
+      "variant": "emphasis",
+      "labelAt": [
+        911.38,
+        335
+      ]
+    },
+    {
+      "id": "remeasure-retry",
+      "from": "remeasure",
+      "to": "coach-correct",
+      "label": "One conditional regeneration",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "left",
+      "via": [
+        [
+          796.03,
+          435
+        ],
+        [
+          796.03,
+          270
+        ]
+      ],
+      "labelAt": [
+        760,
+        378
+      ]
+    },
+    {
+      "id": "report-results",
+      "from": "coach-correct",
+      "to": "results",
+      "label": "SSE coach report"
+    },
+    {
+      "id": "measure-results",
+      "from": "remeasure",
+      "to": "results",
+      "label": "Measured result",
+      "variant": "emphasis",
+      "labelAt": [
+        1073,
+        494
+      ]
+    },
+    {
+      "id": "baseline-results",
+      "from": "pose",
+      "to": "results",
+      "label": "Angles + local fallbacks",
+      "fromSide": "bottom",
+      "toSide": "bottom",
+      "via": [
+        [
+          410,
+          550
+        ],
+        [
+          1205,
+          550
+        ]
+      ],
+      "labelAt": [
+        632.35,
+        550
+      ]
+    },
+    {
+      "id": "cached-results",
+      "from": "fixtures",
+      "to": "results",
+      "label": "Cached reports + assets",
+      "variant": "dashed",
+      "labelAt": [
+        1181.84,
+        350
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Data and custody",
+      "items": [
+        "Normal upload reads the raw video in the browser; sampled JPEGs go to /api/scan.",
+        "Coach requests also send a cropped JPEG, keypoints and measured angles.",
+        "Results live in browser memory. No database or durable history is implemented."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Fallbacks and image checks",
+      "items": [
+        "Unconfigured scan providers are skipped; failures or empty events try the next provider.",
+        "Provider failure can use local pose/rules or a target skeleton.",
+        "Image pass checks one primary metric with 10 degree-equivalents of tolerance; one retry requires the first edit to finish in under 45 s."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Cached demo and evidence",
+      "items": [
+        "Default demo loads synthetic reports and real clip assets; animation does not prove live calls.",
+        "Bundled after.jpg is a later original clip frame, marked placeholderAfter in meta.json.",
+        "Code map at 90fc50b. Live provider behaviour and deployment were not tested. MOCK_AI=1 returns fixtures through the API routes."
+      ]
+    }
+  ]
+}
