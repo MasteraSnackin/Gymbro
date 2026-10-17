@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/private/tmp/gymbro-architecture-u5mfsjf_/gymbro.architecture.json",
+  "output": "/private/tmp/gymbro-architecture-u5mfsjf_/gymbro.architecture.html",
+  "specification": {
+    "sha256": "e6f192aeffccde760dbaa4945bc0fcb31908457c1591018b11ae08b12cb02af3",
+    "bytes": 12552
+  },
+  "artifact": {
+    "sha256": "ea289a920f59492c9284f3b1eb986774da16aa035675d3d1b18bfaad829f4c4d",
+    "bytes": 826056
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  },
+  "evidence": {
+    "verified": true,
+    "repository": "https://github.com/MasteraSnackin/Gymbro",
+    "revision": "90fc50bd7a1620e48b9f94530bb4f123495cf5e0",
+    "references": 24
+  }
+}

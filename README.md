@@ -1,16 +1,19 @@
 # Gym Bro
 
-Upload a set, find a form issue and compare it with a suggested correction.
+An AI spotter for reviewing recorded workout sets.
 
-Gym Bro is a workout video analysis prototype for people reviewing their lifting technique. It combines a video model's assessment with joint measurements from MediaPipe, then uses those measurements to produce coaching cues and an illustrative image correction. The browser measures the resulting image again to check the primary target.
+## Description
 
-Built for the VAST Builders Challenge, "Real-Time Video Agents Hack - LDN", on 17 October 2026. It analyses uploaded clips rather than a live camera feed.
+Gym Bro helps lifters review their technique from an uploaded video. This prototype finds moments to review, measures joint angles with MediaPipe and uses those measurements to suggest coaching cues and an illustrative image correction.
+
+This repository is a fork of [Aerovity/Gymbro](https://github.com/Aerovity/Gymbro), built for the VAST Builders Challenge, "Real-Time Video Agents Hack - LDN", on 17 October 2026. It analyses recorded clips, with a [cached demo](#try-the-cached-demo) available without API keys.
 
 ## Table of contents
 
+- [Description](#description)
 - [Features](#features)
 - [Tech stack](#tech-stack)
-- [Architecture overview](#architecture-overview)
+- [Architecture Overview](#architecture-overview)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Configuration](#configuration)
@@ -24,13 +27,12 @@ Built for the VAST Builders Challenge, "Real-Time Video Agents Hack - LDN", on 1
 
 ## Features
 
-- Analysis for pull-ups, back squats, bench presses, deadlifts, overhead presses and biceps curls.
-- Timestamped frame sampling and a scan fallback chain: Cosmos, NVIDIA Nemotron Omni, GPT vision, then local pose analysis.
-- MediaPipe pose measurements, exercise rules, a form score and coaching cues tied to the measured angles.
-- Streaming coaching, optional spoken summaries and image editing with a second pose measurement to check the primary correction.
-- A before/after slider, skeleton overlays, flagged moments, provider traces and PNG export.
-- Interactive 3D pose replay with split and ghost views. The target skeleton comes from exercise rules.
-- A cached pull-up demo and local fallbacks for uploads when AI services are unavailable.
+- Supports pull-ups, back squats, bench presses, deadlifts, overhead presses and biceps curls.
+- Measures pose locally and presents angle-based feedback, a form score and coaching cues.
+- Adds streaming AI coaching, optional speech and image corrections when providers are configured.
+- Compares before/after images with skeleton overlays, flagged moments, provider traces and PNG export.
+- Shows interactive 3D pose replay with rule-derived target skeletons in split or ghost view.
+- Provides a cached pull-up demo and local fallbacks when AI services are unavailable.
 
 ## Tech stack
 
@@ -44,7 +46,7 @@ Built for the VAST Builders Challenge, "Real-Time Video Agents Hack - LDN", on 1
 
 The repository pins dependency versions in [package.json](package.json) and [package-lock.json](package-lock.json).
 
-## Architecture overview
+## Architecture Overview
 
 ```mermaid
 flowchart LR
@@ -58,16 +60,22 @@ flowchart LR
   Fixtures[Committed demo assets] --> Browser
 ```
 
-The browser decodes the clip, samples timestamped frames, refines the selected moment and measures pose locally. Next.js routes call the configured AI services; the browser then compares the edited image with the primary target. Results live in browser memory, while committed files supply the cached demo; the app has no database or saved session history.
+The browser samples timestamped frames and measures pose locally. Next.js routes try Cosmos, Nemotron Omni and GPT vision in order for scanning, then request coaching and an image edit; the browser re-measures the edit against the primary target. Results live in browser memory, and committed files supply the demo; the app has no database or saved session history.
 
-In the standard upload flow, the original video stays in the browser. Live analysis sends sampled JPEG frames or a contact sheet, a cropped still and pose measurements to the server and relevant AI providers. This does not describe those providers' retention policies. MediaPipe can also fetch model and WASM files from Google and jsDelivr if local assets fail to load.
+Read [ARCHITECTURE.md](ARCHITECTURE.md) for component responsibilities, data flows, deployment details and design trade-offs.
+
+Download the [interactive architecture map](docs/diagrams/gymbro.architecture.html) and open it in a browser to search components, trace paths and explore guided views. GitHub displays the HTML source rather than running the viewer inline. The [editable map](docs/diagrams/gymbro.architecture.json) and [delivery receipt](docs/diagrams/gymbro.architecture.receipt.json) are saved alongside it.
+
+In the standard upload flow, the original video stays in the browser. Live analysis sends sampled JPEGs or a contact sheet, a cropped still and pose measurements to the server and relevant AI providers; their retention policies apply. MediaPipe can fetch model and WASM files from Google and jsDelivr if local assets fail to load.
 
 ## Installation
 
-You need Git, npm and a Node.js version compatible with the locked development dependencies: Node 22.22.2+ within 22.x, 24.15.0+ within 24.x, or 26+. Google Chrome is required for the browser tests. Install FFmpeg if you want to convert phone videos or run the upload and error browser tests.
+- Git and npm, with Node 22.22.2+ within 22.x, 24.15.0+ within 24.x, or 26+, to satisfy the locked development dependencies.
+- Google Chrome for browser tests.
+- FFmpeg for phone-video conversion and the upload and error browser tests.
 
 ```bash
-git clone https://github.com/Aerovity/Gymbro.git
+git clone https://github.com/MasteraSnackin/Gymbro.git
 cd Gymbro
 npm ci
 cp .env.example .env.local
@@ -76,7 +84,7 @@ npm run dev
 
 Open [localhost:3000](http://localhost:3000). You can leave the API keys blank to try the demo or local upload analysis.
 
-The install script copies MediaPipe WASM into `public/mediapipe/wasm` and downloads any missing heavy and lite pose models into `public/models`. These assets are also included in the repository. A failed model download produces a warning; check the local assets before relying on pose analysis without internet access.
+Installation copies MediaPipe WASM into `public/mediapipe/wasm` and downloads missing heavy and lite pose models into `public/models`. These assets are also committed. Downloads can fail with a warning, so check the local assets before relying on pose analysis offline.
 
 ## Usage
 
@@ -100,7 +108,7 @@ Choose the sample clip on the landing page, press `D`, or open [the pull-up demo
 | Overhead press | Side view, with the bar and whole body visible |
 | Biceps curl | Side view, with the upper body and elbows visible |
 
-Without working AI services, uploads use local pose analysis, rule-based coaching and a target ghost skeleton. The ghost does not go through generated-image verification.
+When AI services fail or are unconfigured, uploads fall back to local pose analysis, rule-based coaching and a target ghost skeleton. The ghost does not go through generated-image verification.
 
 For an iPhone HEVC clip that Chrome cannot decode, try Safari or convert it with FFmpeg:
 
@@ -123,21 +131,28 @@ Edit `.env.local`, using [.env.example](.env.example) as the reference. Keep cre
 
 | Variable | Purpose |
 | --- | --- |
-| `COSMOS_BASE_URL` | Primary scan endpoint. Use the hackathon endpoint or a compatible self-hosted service. |
-| `COSMOS_API_KEY` | Bearer token for that endpoint; leave blank if the local service requires none. |
-| `COSMOS_MODEL` | Model ID; blank triggers discovery through `/v1/models`. |
-| `COSMOS_INPUT_MODE` | `video_frames` by default; also accepts `video_url` or `image_frames`. A rejected `video_frames` request can retry with image frames. |
+| `COSMOS_BASE_URL`, `COSMOS_API_KEY` | Primary scan endpoint and its bearer token. The token can be blank for a local service without authentication. |
 | `NVIDIA_API_KEY` | Enables the hosted Nemotron Omni scan fallback. |
-| `NVIDIA_BASE_URL`, `NEMOTRON_MODEL` | Override the hosted endpoint or model. |
 | `OPENAI_API_KEY` | Enables GPT vision fallback, streaming coaching and corrected-image generation. |
-| `OPENAI_COACH_MODEL`, `OPENAI_PICK_MODEL` | Repository defaults: `gpt-6.1-sol` for coaching and frame selection. |
-| `OPENAI_IMAGE_MODEL`, `OPENAI_IMAGE_QUALITY` | Repository defaults: `gpt-image-2.5-flare` and `medium`. |
-| `OPENAI_IMAGE_INPUT_FIDELITY` | Leave blank unless the selected image model supports the setting. |
-| `OPENAI_TTS_MODEL`, `OPENAI_TTS_VOICE` | Optional server speech. A blank model uses browser speech synthesis. |
 | `DEMO_MODE=1` | Substitutes cached pull-up responses in the AI analysis routes. |
 | `MOCK_AI=1` | Uses the same route fixtures; used by browser tests. |
 
-The example file also lists frame-rate and timeout settings. Model names above are configuration defaults, not confirmation that your provider account can access them.
+<details>
+<summary>Optional model and provider settings</summary>
+
+| Variable | Purpose |
+| --- | --- |
+| `COSMOS_MODEL` | Blank discovers the model through `/v1/models`. |
+| `COSMOS_INPUT_MODE` | `video_frames` by default; also accepts `video_url` or `image_frames`. Rejected video-frame requests can retry with image frames. |
+| `NVIDIA_BASE_URL`, `NEMOTRON_MODEL` | Override the hosted endpoint or model. |
+| `OPENAI_COACH_MODEL`, `OPENAI_PICK_MODEL` | Repository default: `gpt-6.1-sol`. |
+| `OPENAI_IMAGE_MODEL`, `OPENAI_IMAGE_QUALITY` | Repository defaults: `gpt-image-2.5-flare` and `medium`. |
+| `OPENAI_IMAGE_INPUT_FIDELITY` | Leave blank unless the image model supports the setting. |
+| `OPENAI_TTS_MODEL`, `OPENAI_TTS_VOICE` | Optional server speech. A blank model uses browser speech synthesis. |
+
+[.env.example](.env.example) also lists frame-rate and timeout settings. Model names are configuration defaults; access depends on your provider account.
+
+</details>
 
 Use the sample demo URL for cached playback. Keep both flags at `0` when analysing your own clip: mocked routes return pull-up fixtures even for other uploads.
 
@@ -145,7 +160,7 @@ Use the sample demo URL for cached playback. Keep both flags at `0` when analysi
 
 ## Screenshots and demo
 
-The screenshots below show the cached pull-up demo. Its [metadata](public/demo/pullup/meta.json) identifies it as a synthetic cached run built around a real clip. The before frame and pose come from MediaPipe; the after image is a later frame from the same video used as a placeholder for an image-model edit. Demo playback does not establish that live providers ran or generated the correction.
+These screens show a synthetic cached run built around a real pull-up clip. The [demo metadata](public/demo/pullup/meta.json) records real MediaPipe output for the before frame, while the after image is a later video frame used as a placeholder. Demo playback does not show live provider calls or an AI-generated correction.
 
 ![Cached pull-up results with measured angles and coaching](docs/screens/results-desktop.png)
 
@@ -199,14 +214,16 @@ Mocked tests check application behaviour without proving that live model credent
 
 ## Contributing
 
-Open an [issue](https://github.com/Aerovity/Gymbro/issues) to report a bug or discuss a change, then submit a focused pull request. Include reproduction steps for bugs and screenshots for interface changes. Run the relevant checks above and describe whether you tested with fixtures, local fallbacks or live providers.
+Submit a focused [pull request to this fork](https://github.com/MasteraSnackin/Gymbro/pulls), with reproduction steps for bugs and screenshots for interface changes. Run the relevant checks above and describe whether you tested with fixtures, local fallbacks or live providers. Issues are disabled on this fork; report bugs shared with the original project through [upstream issues](https://github.com/Aerovity/Gymbro/issues).
 
 [docs/BUILD.md](docs/BUILD.md) explains the implementation layout, and [docs/SPEC.md](docs/SPEC.md) records the design specification. Check the source for current behaviour where those documents describe planned work.
 
 ## Licence
 
-The repository does not include a licence file or declare a licence in `package.json`. No licence has been specified; ask the maintainer about permission to reuse or distribute the code.
+The repository has no licence file or licence declaration in `package.json`. Ask the relevant rights holders about permission to reuse or distribute the code.
 
 ## Contact and support
 
-Use [GitHub issues](https://github.com/Aerovity/Gymbro/issues) for project support. The repository owner is [Aerovity](https://github.com/Aerovity).
+- [This fork](https://github.com/MasteraSnackin/Gymbro), maintained under [MasteraSnackin](https://github.com/MasteraSnackin).
+- [Original project](https://github.com/Aerovity/Gymbro), by [Aerovity](https://github.com/Aerovity).
+- [Upstream issues](https://github.com/Aerovity/Gymbro/issues) for bugs shared with the original project.
