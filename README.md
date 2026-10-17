@@ -162,9 +162,18 @@ Use the sample demo URL for cached playback. Keep both flags at `0` when analysi
 
 These screens show a synthetic cached run built around a real pull-up clip. The [demo metadata](public/demo/pullup/meta.json) records real MediaPipe output for the before frame, while the after image is a later video frame used as a placeholder. Demo playback does not show live provider calls or an AI-generated correction.
 
+![Animated tour of cached results, coaching and 3D pose comparison](docs/screens/gymbro-demo.gif)
+
+This silent loop uses fresh screenshots of the app's cached demo. It shows the photo results, split 3D comparison and ghost overlay alongside the coaching panel. The 3D target is rule-derived.
+
+<details>
+<summary>Static screenshots</summary>
+
 ![Cached pull-up results with measured angles and coaching](docs/screens/results-desktop.png)
 
 ![3D pose comparison in split view](docs/screens/3d-replay-split.png)
+
+</details>
 
 The repository does not list a public deployment URL.
 
